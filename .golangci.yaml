@@ -1,0 +1,78 @@
+run:
+  # skip lint on all test files.
+  tests: false
+
+issues:
+  exclude-rules:
+    # select lint checks to disable for *_test.go files
+    - path: (.+)_test\.go
+      linters:
+        - "*"
+        
+linters-settings:
+  funlen:
+    ignore-comments: true
+  lll:
+    line-length: 120
+  maintidx:
+    under: 50
+  nakedret:
+    max-func-lines: 10    
+  stylecheck:
+    checks: ["all","-ST1003"]
+  revive:
+    ignore-generated-header: true
+    severity: warning
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: increment-decrement
+#      - name: var-naming
+      - name: var-declaration
+      - name: package-comments
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+      - name: indent-error-flow
+      - name: errorf
+      - name: empty-block
+      - name: superfluous-else
+      - name: unused-parameter
+      - name: unreachable-code
+      - name: redefines-builtin-id   
+      
+linters:
+  disable-all: false
+  enable:
+    - cyclop
+    - dupl
+#    - fatcontext
+    - funlen
+    - gocritic
+    - godot
+    - godox
+    - gosec
+#    - iface
+    - inamedparam
+    - lll
+#    - maintidx
+    - nakedret
+    - nestif
+    - nilerr
+    - nlreturn
+#    - recvcheck
+    - revive
+#    - sloglint
+    - stylecheck
+    - unparam
+    - varnamelen
+    - whitespace
+    - wsl
+    
