@@ -21,14 +21,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	defer dev.Close()
 
 	fmt.Println(dev.DeviceDesc())
 
 	scanChannels := []u6.ChannelConfig{{12, u6.GainIndex10, u6.DifferentialInputDisabled}}
 	scanConfig := &u6.ScanConfig{u6.ClockSpeed4Mhz, u6.ClockDivisionOff, 0}
+
 	stream, err := dev.NewStream(&u6.StreamConfig{1, 25, 0, 0, scanConfig, scanChannels})
-	if err != nil {
+	if err != nil || dev == nil {
 		log.Fatal(err)
 	}
 
@@ -52,6 +54,7 @@ OUTER:
 					fmt.Println(err)
 					continue
 				}
+
 				fh.WriteString(fmt.Sprintf("%s,%d,%d,%d,%0.8f\n", time.Now().Format(time.RFC3339Nano), channel.ChannelIndex, channel.ScanNumber, resp.PacketNumber, voltage))
 				fmt.Printf("Packet=%d; ChannelIndex=%d; ScanNumber=%d; Voltage=%0.6f\n", resp.PacketNumber, channel.ChannelIndex, channel.ScanNumber, voltage)
 			}

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/google/gousb"
 	"github.com/napaul07/labjack"
-	// "io"
 )
 
 // OpenUSBConnection opens the USB connection a LabJack U6.
@@ -16,13 +15,15 @@ func OpenUSBConnection(usbctx *gousb.Context) (*U6, error) {
 	}
 
 	// Open any device with a given VID/PID using a convenience function.
-	dev, err := usbctx.OpenDeviceWithVIDPID(labjack.VendorID, labjack.U6ProductID)
-	if err != nil {
+	dev, err := usbctx.OpenDeviceWithVIDPID(labjack.VendorID, labjack.T7ProductID)
+	if err != nil || dev == nil {
 		return &emptyU6, ErrLibUSB{"Could not open a device", err}
 	}
+
 	if err := dev.Reset(); err != nil {
 		return &emptyU6, err
 	}
+
 	if err := dev.SetAutoDetach(true); err != nil {
 		return &emptyU6, err
 	}
@@ -35,12 +36,13 @@ func OpenUSBConnection(usbctx *gousb.Context) (*U6, error) {
 	if err = ljdev.getCalibrationInfo(); err != nil {
 		return &emptyU6, err
 	}
+
 	return ljdev, nil
 }
 
 var emptyU6 U6
 
-// U6 represents the LabJack U6 / U6 Pro devices
+// U6 represents the LabJack U6 / U6 Pro devices.
 type U6 struct {
 	device      *gousb.Device
 	config      DeviceDesc
@@ -64,6 +66,7 @@ func (u *U6) initConnection() error {
 	for i := 6; i < 26; i++ {
 		sendBuffer[i] = uint8(0x00)
 	}
+
 	extendedChecksum(sendBuffer)
 
 	// Open USB interface
@@ -111,6 +114,7 @@ func (u *U6) initConnection() error {
 	if err != nil {
 		return err
 	}
+
 	u.config = config
 
 	return nil
@@ -140,9 +144,11 @@ func validateCommandResponse(recBuffer []uint8) error {
 		return err
 	} else if uint8((checksumTotal/256)&0xFF) != recBuffer[5] {
 		fmt.Printf("ErrInvalidChecksum MSB: %d != %d\n", uint8((checksumTotal/256)&0xFF), recBuffer[5])
+
 		return ErrInvalidChecksum
 	} else if uint8(checksumTotal&0xFF) != recBuffer[4] {
 		fmt.Printf("ErrInvalidChecksum LSB: %d != %d\n", uint8((checksumTotal)&0xFF), recBuffer[4])
+
 		return ErrInvalidChecksum
 	}
 
@@ -151,13 +157,14 @@ func validateCommandResponse(recBuffer []uint8) error {
 		return err
 	} else if c != recBuffer[0] {
 		fmt.Printf("ErrInvalidChecksum 8-bit: %d != %d\n", c, recBuffer[0])
+
 		return ErrInvalidChecksum
 	}
 
 	return nil
 }
 
-// GetCalibrationInfo gets the calibration information for the device
+// GetCalibrationInfo gets the calibration information for the device.
 func (u *U6) getCalibrationInfo() error {
 	sendBuffer := make([]byte, 64)
 	recBuffer := make([]byte, 64)
@@ -170,6 +177,7 @@ func (u *U6) getCalibrationInfo() error {
 	for i := 6; i < 26; i++ {
 		sendBuffer[i] = uint8(0x00)
 	}
+
 	extendedChecksum(sendBuffer[:26])
 
 	// Open USB interface
@@ -254,6 +262,7 @@ func (u *U6) getCalibrationInfo() error {
 		if recBuffer[1] != uint8(0xF8) || recBuffer[2] != uint8(0x11) || recBuffer[3] != uint8(0x2D) {
 			return ErrInvalidResponseHeader
 		}
+
 		offset = i * 4
 
 		// block data starts on byte 8 of the buffer
@@ -266,12 +275,13 @@ func (u *U6) getCalibrationInfo() error {
 		cal.CalConstants[offset+3] = uint8ArrayToFloat64(recBuffer[8:], 24)
 		// fmt.Println(recBuffer[32:40])
 	}
+
 	u.calibration = cal
 
 	return nil
 }
 
-// GetCalibrationInfo gets the calibration information for the device
+// GetCalibrationInfo gets the calibration information for the device.
 func (u *U6) GetCalibrationInfo() CalibrationInfo {
 	return u.calibration
 }
@@ -297,16 +307,21 @@ func (u *U6) Feedback(cmds ...FeedbackCommand) error {
 	// fmt.Println("After header: ", sendBuffer.Bytes())
 
 	// Write each feeback command
-	var length int
-	var responseSize int
+	var (
+		length       int
+		responseSize int
+	)
+
 	for _, cmd := range cmds {
 		cmd.SetCalibrationInfo(u.calibration)
+
 		n, err := cmd.WriteTo(&sendBuffer)
 		if err != nil {
 			return err
 		} else if n == 0 {
 			return errors.New("command data was not written")
 		}
+
 		length += n
 		responseSize += cmd.ResponseSize()
 	}
@@ -317,6 +332,7 @@ func (u *U6) Feedback(cmds ...FeedbackCommand) error {
 		if err = sendBuffer.WriteByte(0x00); err != nil {
 			return err
 		}
+
 		length++
 	}
 	// fmt.Println("After padding: ", sendBuffer.Bytes())
@@ -330,6 +346,7 @@ func (u *U6) Feedback(cmds ...FeedbackCommand) error {
 	if err = setChecksum(buf); err != nil {
 		return err
 	}
+
 	fmt.Printf("After checksum: %v\n", buf)
 
 	// Open USB interface
@@ -361,6 +378,7 @@ func (u *U6) Feedback(cmds ...FeedbackCommand) error {
 
 	// Read response
 	recvBuffer := make([]byte, 9+responseSize)
+
 	n, err = in.Read(recvBuffer)
 	if err != nil {
 		return err
@@ -392,6 +410,7 @@ func (u *U6) Feedback(cmds ...FeedbackCommand) error {
 
 	errCode := recvBuffer[6]
 	errFrame := recvBuffer[7]
+
 	if errCode != 0 {
 		return fmt.Errorf("feedback response error code (%d): command=%d", errCode, errFrame)
 	}
@@ -399,22 +418,24 @@ func (u *U6) Feedback(cmds ...FeedbackCommand) error {
 	// Populate the commands' response
 	remaining := int64(len(recvBuffer) - 9)
 	buffer := bytes.NewBuffer(recvBuffer[9:])
-	for _, cmd := range cmds {
 
+	for _, cmd := range cmds {
 		num, err := cmd.ReadFrom(buffer)
 		if err != nil {
 			return err
 		}
+
 		remaining -= int64(num)
 	}
 
 	if remaining != 0 {
 		return fmt.Errorf("feedback response was not decoded completely: remaining=%d", remaining)
 	}
+
 	return nil
 }
 
-// NewStream creates a new data stream
+// NewStream creates a new data stream.
 func (u *U6) NewStream(config *StreamConfig) (*Stream, error) {
 	stream := &Stream{u, config, make(chan struct{}, 1), func() {}}
 	if config.SamplesPerPacket < 1 || config.SamplesPerPacket > 25 {
@@ -423,12 +444,13 @@ func (u *U6) NewStream(config *StreamConfig) (*Stream, error) {
 		return stream, errors.New("invalid resolution index")
 	}
 
-	// config.ScanFrequency *= len(config.Channels)
+	// config.ScanFrequency *= len(config.Channels).
 	if config.ScanFrequency != 0 {
 		if config.ScanFrequency < 1000 {
 			if config.ScanFrequency < 25 {
 				config.SamplesPerPacket = byte(config.ScanFrequency)
 			}
+
 			config.ScanConfig.DivideBy256 = ClockDivisionOn
 			config.ScanConfig.ScanInterval = uint16(15625 / config.ScanFrequency)
 		} else {
@@ -466,20 +488,20 @@ func (u *U6) NewStream(config *StreamConfig) (*Stream, error) {
 	}
 	// fmt.Println("After header: ", sendBuffer.Bytes())
 
-	// Calculate checksum
+	// Calculate checksum.
 	if err := setChecksum(header); err != nil {
 		return stream, err
 	}
 	// fmt.Printf("After checksum: %v\n", header)
 
-	// Open USB interface
+	// Open USB interface.
 	inf, done, err := u.device.DefaultInterface()
 	if err != nil {
 		return stream, err
 	}
 	defer done()
 
-	// Open endpoint
+	// Open endpoint.
 	out, err := inf.OutEndpoint(labjack.U6PipeOutEP1)
 	if err != nil {
 		return stream, err
@@ -493,14 +515,15 @@ func (u *U6) NewStream(config *StreamConfig) (*Stream, error) {
 		return stream, errors.New("send buffer was not written completely")
 	}
 
-	// Open endpoint
+	// Open endpoint.
 	in, err := inf.InEndpoint(labjack.U6PipeInEP2)
 	if err != nil {
 		return stream, err
 	}
 
-	// Read response
+	// Read response.
 	recvBuffer := make([]byte, 8)
+
 	n, err = in.Read(recvBuffer)
 	if err != nil {
 		return stream, err
@@ -534,5 +557,6 @@ func (u *U6) NewStream(config *StreamConfig) (*Stream, error) {
 	if errCode != 0 {
 		return stream, fmt.Errorf("feedback response error code (%d)", errCode)
 	}
+
 	return stream, nil
 }

@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// ErrInvalidContext is returned if the context is nil
+// ErrInvalidContext is returned if the context is nil.
 var ErrInvalidContext = errors.New("invalid USB context")
 
 // ErrEndpointSendError is returned when data could not be sent or not all the data was sent.
@@ -14,16 +14,16 @@ var ErrEndpointSendError = errors.New("failed to send data to device")
 // ErrEndpointRecvError is returned when data could not be read or not all the data was received.
 var ErrEndpointRecvError = errors.New("failed to receive data from device")
 
-// ErrInvalidChecksumInput occurs when the checksum input is too short
+// ErrInvalidChecksumInput occurs when the checksum input is too short.
 var ErrInvalidChecksumInput = errors.New("checksum could not be calculated; input too short")
 
-// ErrInvalidChecksumResponse is returned if the U6 detected a bad checksum
+// ErrInvalidChecksumResponse is returned if the U6 detected a bad checksum.
 var ErrInvalidChecksumResponse = errors.New("the U6 detected a bad checksum. Double check your checksum calculations and try again")
 
 // ErrInvalidChecksum8Response is returned if the checksum8 function provides invalid data.
 var ErrInvalidChecksum8Response = errors.New("the U6 detected a bad checksum. Double check your checksum8 calculations and try again")
 
-// ErrInvalidChecksum is returned if the checksum is invalid
+// ErrInvalidChecksum is returned if the checksum is invalid.
 var ErrInvalidChecksum = errors.New("invalid checksum")
 
 // ErrInvalidResponseHeader is returned if the response header is not valid.

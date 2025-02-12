@@ -3,10 +3,10 @@ package u6
 import "io"
 import "errors"
 
-// DigitalIOBit represents the FIO, EIO and CIO bits
+// DigitalIOBit represents the FIO, EIO and CIO bits.
 type DigitalIOBit byte
 
-// FIO0 - FIO7, EIO0 - EIO7 and CIO0 - CIO3
+// FIO0 - FIO7, EIO0 - EIO7 and CIO0 - CIO3.
 const (
 	FIO0 DigitalIOBit = iota // 0
 	FIO1                     // 1
@@ -30,19 +30,19 @@ const (
 	CIO3                     // 19
 )
 
-// BitDirection describes the IO direction (read/write)
+// BitDirection describes the IO direction (read/write).
 type BitDirection byte
 
-// BitDirections for BitDirWrite feedback command
+// BitDirections for BitDirWrite feedback command.
 const (
 	BitDirectionRead  BitDirection = 0   // 0
 	BitDirectionWrite BitDirection = 128 // 128
 )
 
-// BitState describes the bit state (on/off)
+// BitState describes the bit state (on/off).
 type BitState byte
 
-// BitDirections for BitDirWrite feedback command
+// BitDirections for BitDirWrite feedback command.
 const (
 	BitStateDisabled BitState = 0   // 0
 	BitStateEnabled  BitState = 128 // 128
@@ -77,6 +77,7 @@ func (f *FeedbackPortDirWrite) WriteTo(w io.Writer) (int, error) {
 	buf[4] = f.FIODirection // FIO Direction
 	buf[5] = f.EIODirection // EIO Direction
 	buf[6] = f.CIODirection // CIO Direction
+
 	return w.Write(buf)
 }
 
@@ -115,16 +116,19 @@ func (f *FeedbackAIN24) WriteTo(w io.Writer) (int, error) {
 	buf[1] = byte(f.PositiveChannel)                    // Positive Channel 0-143s
 	buf[2] = byte(uint(f.ResolutionIndex) & 0x0F)       // ResolutionIndex
 	buf[2] = byte((uint(f.GainIndex)&0x0F)<<4) + buf[2] // GainIndex
-	buf[3] = byte(f.SettlingFactor)                     // SettlingFactor
+	buf[3] = byte(f.SettlingFactor)
+	// SettlingFactor
 	if f.Differential {
 		buf[3] += 1 << 7
 	}
+
 	n, err := w.Write(buf)
 	if err != nil {
 		return n, err
 	} else if n != 4 {
 		return n, errors.New("feedback AIN24 data was not fully written")
 	}
+
 	return n, err
 }
 
@@ -132,6 +136,7 @@ func (f *FeedbackAIN24) WriteTo(w io.Writer) (int, error) {
 func (f *FeedbackAIN24) ReadFrom(r io.Reader) (int, error) {
 	f.responseBuffer = make([]byte, 4)
 	n, err := r.Read(f.responseBuffer)
+
 	return n, err
 }
 
@@ -145,14 +150,16 @@ func (f *FeedbackAIN24) SetCalibrationInfo(info CalibrationInfo) {
 	f.calInfo = info
 }
 
-// GetVoltage returns the calibrated voltage
+// GetVoltage returns the calibrated voltage.
 func (f *FeedbackAIN24) GetVoltage() (float64, error) {
 	return getCalibratedAIN(f.calInfo, f.ResolutionIndex, f.GainIndex, true, uint(f.responseBuffer[0])+uint(f.responseBuffer[1])*256+uint(f.responseBuffer[2])*65536)
 }
 
 func getCalibratedAIN(cal CalibrationInfo, ResolutionIndex int, GainIndex int, HiResolution bool, bytesVolt uint) (float64, error) {
-	var indexAdjust int
-	var analogVolt float64
+	var (
+		indexAdjust int
+		analogVolt  float64
+	)
 	// fmt.Printf("Byte volts: %d\n", bytesVolt)
 	value := float64(bytesVolt)
 	if HiResolution {
@@ -172,37 +179,40 @@ func getCalibratedAIN(cal CalibrationInfo, ResolutionIndex int, GainIndex int, H
 	} else {
 		analogVolt = (value - cal.CalConstants[indexAdjust+GainIndex*2+9]) * cal.CalConstants[indexAdjust+GainIndex*2]
 	}
+
 	return analogVolt, nil
 }
 
-// FeedbackBitStateRead is the feedback command for BitStateRead
+// FeedbackBitStateRead is the feedback command for BitStateRead.
 type FeedbackBitStateRead struct {
 	BitNumber DigitalIOBit
 	state     byte
 }
 
-// WriteTo writes the command
+// WriteTo writes the command.
 func (f *FeedbackBitStateRead) WriteTo(w io.Writer) (n int, err error) {
 	buffer := make([]byte, 2)
 	buffer[0] = 10
 	buffer[1] = byte(f.BitNumber)
+
 	return w.Write(buffer)
 }
 
-// ReadFrom reads the response
+// ReadFrom reads the response.
 func (f *FeedbackBitStateRead) ReadFrom(r io.Reader) (n int, err error) {
 	responseBuffer := make([]byte, 1)
 	n, err = r.Read(responseBuffer)
 	f.state = responseBuffer[0]
+
 	return n, err
 }
 
-// ResponseSize is the size of the response
+// ResponseSize is the size of the response.
 func (f *FeedbackBitStateRead) ResponseSize() int {
 	return 1
 }
 
-// SetCalibrationInfo sets the calibration info
+// SetCalibrationInfo sets the calibration info.
 func (f *FeedbackBitStateRead) SetCalibrationInfo(_ CalibrationInfo) {
 }
 
@@ -211,7 +221,7 @@ func (f *FeedbackBitStateRead) GetState() bool {
 	return f.state == byte(1)
 }
 
-// FeedbackBitDirWrite is the BitDirWrite feedback command
+// FeedbackBitDirWrite is the BitDirWrite feedback command.
 type FeedbackBitDirWrite struct {
 	BitNumber DigitalIOBit
 	Direction BitDirection
@@ -219,55 +229,58 @@ type FeedbackBitDirWrite struct {
 	state     byte
 }
 
-// WriteTo writes the command
+// WriteTo writes the command.
 func (f *FeedbackBitDirWrite) WriteTo(w io.Writer) (n int, err error) {
 	buffer := make([]byte, 2)
 	buffer[0] = 13
 	buffer[1] = byte(f.BitNumber) + byte(f.Direction)
+
 	return w.Write(buffer)
 }
 
-// ReadFrom reads the response
+// ReadFrom reads the response.
 func (f *FeedbackBitDirWrite) ReadFrom(r io.Reader) (n int, err error) {
 	responseBuffer := make([]byte, 1)
 	n, err = r.Read(responseBuffer)
 	f.state = responseBuffer[0]
+
 	return n, err
 }
 
-// ResponseSize returns the size of the response
+// ResponseSize returns the size of the response.
 func (f *FeedbackBitDirWrite) ResponseSize() int {
 	return 1
 }
 
-// SetCalibrationInfo sets the CalibrationInfo
+// SetCalibrationInfo sets the CalibrationInfo.
 func (f *FeedbackBitDirWrite) SetCalibrationInfo(_ CalibrationInfo) {
 }
 
-// FeedbackBitStateWrite is the BitStateWrite feedback command
+// FeedbackBitStateWrite is the BitStateWrite feedback command.
 type FeedbackBitStateWrite struct {
 	BitNumber DigitalIOBit
 	State     BitState
 }
 
-// WriteTo writes the command
+// WriteTo writes the command.
 func (f *FeedbackBitStateWrite) WriteTo(w io.Writer) (n int, err error) {
 	buffer := make([]byte, 2)
 	buffer[0] = 11
 	buffer[1] = byte(f.BitNumber) + byte(f.State)
+
 	return w.Write(buffer)
 }
 
-// ReadFrom reads the response
+// ReadFrom reads the response.
 func (f *FeedbackBitStateWrite) ReadFrom(_ io.Reader) (n int, err error) {
 	return 0, nil
 }
 
-// ResponseSize returns the size of the response
+// ResponseSize returns the size of the response.
 func (f *FeedbackBitStateWrite) ResponseSize() int {
 	return 0
 }
 
-// SetCalibrationInfo sets the CalibrationInfo
+// SetCalibrationInfo sets the CalibrationInfo.
 func (f *FeedbackBitStateWrite) SetCalibrationInfo(_ CalibrationInfo) {
 }

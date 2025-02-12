@@ -1,13 +1,13 @@
 package u6
 
-// CalibrationInfo holds the U6 calibration
+// CalibrationInfo holds the U6 calibration.
 type CalibrationInfo struct {
 	ProductID    uint8
 	HiResolution bool
 	CalConstants CalibrationConstants
 }
 
-// CalibrationConstants holds the calibration constants
+// CalibrationConstants holds the calibration constants.
 type CalibrationConstants [40]float64
 
 /*

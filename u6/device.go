@@ -6,7 +6,7 @@ import (
 	"fmt"
 )
 
-// DeviceType represents the name of the device
+// DeviceType represents the name of the device.
 type DeviceType string
 
 const (

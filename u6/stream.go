@@ -1,7 +1,6 @@
 package u6
 
 import (
-	// "bufio"
 	"errors"
 	"fmt"
 	"github.com/google/gousb"
@@ -131,6 +130,7 @@ func (s *Stream) Start() (chan StreamResponse, error) {
 	in, err := inf.InEndpoint(labjack.U6PipeInEP3)
 	if err != nil {
 		done()
+
 		return dataCh, err
 	}
 	// in.Timeout = time.Second
@@ -138,45 +138,56 @@ func (s *Stream) Start() (chan StreamResponse, error) {
 	stream, err := in.NewStream(int(14*s.config.SamplesPerPacket*2)*10, 20)
 	if err != nil {
 		done()
+
 		return dataCh, err
 	}
+
 	s.closeInf = done
 	go s.readStream(dataCh, stream)
+
 	return dataCh, nil
 }
 
 func (s *Stream) readStream(dataCh chan StreamResponse, stream *gousb.ReadStream) {
 	defer stream.Close()
 
-	var n int
-	var err error
-	var scanNumber int
-	var channelIndex int
-	var packetNumber int
-	var checksumTotal8 uint8
-	var checksumTotal16 uint16
+	var (
+		n               int
+		err             error
+		scanNumber      int
+		channelIndex    int
+		packetNumber    int
+		checksumTotal8  uint8
+		checksumTotal16 uint16
+	)
+
 	samplesPerPacket := s.config.SamplesPerPacket
 	bytelimit := int(12 + s.config.SamplesPerPacket*2)
 	numChannels := len(s.config.Channels)
 	packetsPerRequest := 10
 
 	var recvBuffer []byte
+
 	packestSize := int(14 + s.config.SamplesPerPacket*2)
 	reqBuffer := make([]byte, packestSize*packetsPerRequest)
+
 	for {
 		select {
 		case <-s.stopCh:
 			s.closeInf()
 			s.stop()
+
 			return
 		default:
 			n, err = io.ReadFull(stream, reqBuffer)
 			if err != nil {
 				dataCh <- StreamResponse{Timestamp: time.Now(), Error: err}
+
 				continue
 			} else if n != len(reqBuffer) {
 				fmt.Printf("Failed to read complete response: %d != %d\n", n, len(reqBuffer))
 				dataCh <- StreamResponse{Timestamp: time.Now(), Error: ErrResponseTooShort}
+
 				continue
 			}
 
@@ -187,32 +198,40 @@ func (s *Stream) readStream(dataCh chan StreamResponse, stream *gousb.ReadStream
 				checksumTotal16, err = extendedChecksum16(recvBuffer)
 				if err != nil {
 					dataCh <- StreamResponse{Timestamp: time.Now(), Error: err}
+
 					continue
 				} else if byte((checksumTotal16>>8)&0xff) != recvBuffer[5] {
 					dataCh <- StreamResponse{Timestamp: time.Now(), Error: ErrInvalidChecksumResponse}
+
 					continue
 				} else if byte(checksumTotal16&0xff) != recvBuffer[4] {
 					dataCh <- StreamResponse{Timestamp: time.Now(), Error: ErrInvalidChecksumResponse}
+
 					continue
 				}
 
 				checksumTotal8, err = extendedChecksum8(recvBuffer)
 				if err != nil {
 					dataCh <- StreamResponse{Error: err}
+
 					continue
 				} else if checksumTotal8 != recvBuffer[0] {
 					dataCh <- StreamResponse{Timestamp: time.Now(), Error: ErrInvalidChecksumResponse}
+
 					continue
 				}
 
 				if recvBuffer[1] != byte(0xF9) {
 					dataCh <- StreamResponse{Timestamp: time.Now(), Error: ErrInvalidResponseHeader}
+
 					continue
 				} else if recvBuffer[2] != byte(4+s.config.SamplesPerPacket) {
 					dataCh <- StreamResponse{Timestamp: time.Now(), Error: ErrInvalidResponseHeader}
+
 					continue
 				} else if recvBuffer[3] != byte(0xC0) {
 					dataCh <- StreamResponse{Timestamp: time.Now(), Error: ErrInvalidResponseHeader}
+
 					continue
 				}
 
@@ -223,6 +242,7 @@ func (s *Stream) readStream(dataCh chan StreamResponse, stream *gousb.ReadStream
 					// recvBuffer[6] + recvBuffer[7]*256 scans dropped
 				} else if recvBuffer[11] != 0 {
 					dataCh <- StreamResponse{Timestamp: time.Now(), Error: ErrLabJackErrorCode{int(recvBuffer[11])}}
+
 					continue
 				}
 
@@ -232,6 +252,7 @@ func (s *Stream) readStream(dataCh chan StreamResponse, stream *gousb.ReadStream
 				// Backlog
 				// Channel data
 				data := make([]*ChannelData, samplesPerPacket)
+
 				for i := 12; i < bytelimit; i += 2 {
 					data[(i-12)/2] = &ChannelData{
 						ChannelIndex:  channelIndex,
@@ -242,6 +263,7 @@ func (s *Stream) readStream(dataCh chan StreamResponse, stream *gousb.ReadStream
 						config:        s.config,
 						channelConfig: s.config.Channels[channelIndex],
 					}
+
 					channelIndex++
 					if channelIndex >= numChannels {
 						channelIndex = 0
@@ -252,6 +274,7 @@ func (s *Stream) readStream(dataCh chan StreamResponse, stream *gousb.ReadStream
 				if packetNumber >= 255 {
 					packetNumber = 0
 				}
+
 				packetNumber++
 				dataCh <- StreamResponse{Timestamp: time.Now(), Data: data, PacketNumber: packetNumber}
 			}
@@ -295,6 +318,7 @@ func (s *Stream) start() error {
 
 	// Read response
 	recvBuffer := make([]byte, 4)
+
 	n, err = in.Read(recvBuffer)
 	if err != nil {
 		return err
@@ -312,6 +336,7 @@ func (s *Stream) start() error {
 	if errCode != 0 {
 		return fmt.Errorf("feedback response error code (%d)", errCode)
 	}
+
 	return nil
 }
 
@@ -352,6 +377,7 @@ func (s *Stream) stop() error {
 
 	// Read response
 	recvBuffer := make([]byte, 4)
+
 	n, err = in.Read(recvBuffer)
 	if err != nil {
 		return err
@@ -372,6 +398,7 @@ func (s *Stream) stop() error {
 	if errCode != 0 && errCode != byte(52) {
 		return fmt.Errorf("feedback response error code (%d)", errCode)
 	}
+
 	return nil
 }
 

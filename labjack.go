@@ -10,10 +10,11 @@ import (
 // VendorID is the ID for the LabJack company.
 const VendorID = gousb.ID(0x0cd5)
 
-// U6ProductID is the ID for the U6 / U6 Pro devices
+// U6ProductID is the ID for the U6 / U6 Pro devices.
 const U6ProductID = gousb.ID(0x0006)
+const T7ProductID = gousb.ID(0x0007)
 
-// U6 pipes to read/write through
+// U6 pipes to read/write through.
 const (
 	U6PipeOutEP1 int = 1
 	U6PipeInEP2  int = 0x82

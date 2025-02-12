@@ -1,11 +1,11 @@
 package u6
 
-// normalChecksum returns an 8-bit checksum
+// normalChecksum returns an 8-bit checksum.
 func normalChecksum(bytes []uint8) uint8 {
 	return normalChecksum8(bytes)
 }
 
-// normalChecksum8 calculates the 8-bit checksum
+// normalChecksum8 calculates the 8-bit checksum.
 func normalChecksum8(bytes []uint8) uint8 {
 	var a, bb uint16
 
@@ -19,10 +19,11 @@ func normalChecksum8(bytes []uint8) uint8 {
 	bb = a / 256
 	a = (a - 256*bb) + bb
 	bb = a / 256
+
 	return uint8((a - 256*bb) + bb)
 }
 
-// extendedChecksum in-lines the 16-bit checksum in the slice
+// extendedChecksum in-lines the 16-bit checksum in the slice.
 func extendedChecksum(bytes []uint8) error {
 	a, err := extendedChecksum16(bytes)
 	if err != nil {
@@ -37,10 +38,11 @@ func extendedChecksum(bytes []uint8) error {
 	bytes[4] = uint8(a & 0xff)
 	bytes[5] = uint8((a / 256) & 0xff)
 	bytes[0] = b
+
 	return nil
 }
 
-// extendedChecksum16 returns the 16-bit checksum
+// extendedChecksum16 returns the 16-bit checksum.
 func extendedChecksum16(bytes []uint8) (uint16, error) {
 	if len(bytes) < 7 {
 		return 0, ErrInvalidChecksumInput
@@ -51,10 +53,11 @@ func extendedChecksum16(bytes []uint8) (uint16, error) {
 	for i := 6; i < len(bytes); i++ {
 		a += uint16(bytes[i])
 	}
+
 	return a, nil
 }
 
-// extendedChecksum8 returns the 8-bit extended checksum
+// extendedChecksum8 returns the 8-bit extended checksum.
 func extendedChecksum8(bytes []uint8) (uint8, error) {
 	if len(bytes) < 6 {
 		return 0, ErrInvalidChecksumInput
@@ -81,36 +84,45 @@ func setChecksum(bytes []uint8) error {
 
 	a := bytes[1]
 	a = (a & 0x78) >> 3
+
 	if a == 15 {
 		setChecksum16(bytes)
 		setChecksum8(bytes, 6)
 	} else {
 		setChecksum8(bytes, len(bytes))
 	}
+
 	return nil
 }
 
 func setChecksum16(bytes []uint8) {
 	var total int
+
 	for i := 6; i < len(bytes); i++ {
 		total += int(bytes[i] & 0xFF)
 	}
+
 	bytes[4] = byte(total & 0xFF)
 	bytes[5] = byte((total >> 8) & 0xFF)
 }
 
 func setChecksum8(bytes []uint8, num int) {
 	var total int
+
 	for i := 1; i < num; i++ {
 		total += int(bytes[i] & 0xFF)
 	}
+
 	bytes[0] = byte(total&0xFF + ((total >> 8) & 0xFF))
 	bytes[0] = bytes[0]&0xFF + ((bytes[0] >> 8) & 0xFF)
 }
 
 func uint8ArrayToFloat64(buffer []uint8, startIndex int) float64 {
-	var resultDec uint32
-	var resultWh int32
+	var (
+		resultDec uint32
+		resultWh  int32
+	)
+
 	resultDec = uint32(buffer[startIndex]) |
 		(uint32(buffer[startIndex+1]) << 8) |
 		(uint32(buffer[startIndex+2]) << 16) |
@@ -119,5 +131,6 @@ func uint8ArrayToFloat64(buffer []uint8, startIndex int) float64 {
 		(int32(buffer[startIndex+5]) << 8) |
 		(int32(buffer[startIndex+6]) << 16) |
 		(int32(buffer[startIndex+7]) << 24)
+
 	return float64(int(resultWh)) + float64(resultDec)/4294967296.0
 }
