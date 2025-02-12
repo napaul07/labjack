@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/clevertrack1/labjack"
 	"github.com/google/gousb"
+	"github.com/napaul07/labjack"
 	// "io"
 )
 

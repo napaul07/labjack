@@ -3,8 +3,8 @@ package u6_test
 import (
 	"bytes"
 	"fmt"
-	"github.com/clevertrack1/labjack/u6"
 	"github.com/google/gousb"
+	"github.com/napaul07/labjack/u6"
 	"log"
 	"testing"
 	"time"

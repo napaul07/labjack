@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/clevertrack1/labjack/u6"
 	"github.com/google/gousb"
+	"gith
 	"log"
 	"time"
 )

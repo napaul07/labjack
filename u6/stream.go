@@ -4,8 +4,8 @@ import (
 	// "bufio"
 	"errors"
 	"fmt"
-	"github.com/clevertrack1/labjack"
 	"github.com/google/gousb"
+	"git
 	"io"
 	"time"
 )
