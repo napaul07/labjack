@@ -9,9 +9,9 @@ func normalChecksum(bytes []uint8) uint8 {
 func normalChecksum8(bytes []uint8) uint8 {
 	var a, bb uint16
 
-	//Sums bytes 1 to n-1 unsigned to a 2 byte value. Sums quotient and
-	//remainder of 256 division.  Again, sums quotient and remainder of
-	//256 division.
+	// Sums bytes 1 to n-1 unsigned to a 2 byte value. Sums quotient and
+	// remainder of 256 division.  Again, sums quotient and remainder of
+	// 256 division.
 	for _, b := range bytes {
 		a += uint16(b)
 	}
@@ -47,7 +47,7 @@ func extendedChecksum16(bytes []uint8) (uint16, error) {
 	}
 	var a uint16
 
-	//Sums bytes 6 to n-1 to a unsigned 2 byte value
+	// Sums bytes 6 to n-1 to a unsigned 2 byte value
 	for i := 6; i < len(bytes); i++ {
 		a += uint16(bytes[i])
 	}
@@ -61,8 +61,8 @@ func extendedChecksum8(bytes []uint8) (uint8, error) {
 	}
 	var a, bb int
 
-	//Sums bytes 1 to 5. Sums quotient and remainder of 256 division. Again, sums
-	//quotient and remainder of 256 division.
+	// Sums bytes 1 to 5. Sums quotient and remainder of 256 division. Again, sums
+	// quotient and remainder of 256 division.
 	for i := 1; i < 6; i++ {
 		a += int(uint16(bytes[i]))
 	}
@@ -111,13 +111,13 @@ func setChecksum8(bytes []uint8, num int) {
 func uint8ArrayToFloat64(buffer []uint8, startIndex int) float64 {
 	var resultDec uint32
 	var resultWh int32
-	resultDec = (uint32(buffer[startIndex]) |
+	resultDec = uint32(buffer[startIndex]) |
 		(uint32(buffer[startIndex+1]) << 8) |
 		(uint32(buffer[startIndex+2]) << 16) |
-		(uint32(buffer[startIndex+3]) << 24))
-	resultWh = (int32(buffer[startIndex+4]) |
+		(uint32(buffer[startIndex+3]) << 24)
+	resultWh = int32(buffer[startIndex+4]) |
 		(int32(buffer[startIndex+5]) << 8) |
 		(int32(buffer[startIndex+6]) << 16) |
-		(int32(buffer[startIndex+7]) << 24))
+		(int32(buffer[startIndex+7]) << 24)
 	return float64(int(resultWh)) + float64(resultDec)/4294967296.0
 }

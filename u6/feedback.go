@@ -71,12 +71,12 @@ type FeedbackPortDirWrite struct {
 func (f *FeedbackPortDirWrite) WriteTo(w io.Writer) (int, error) {
 	buf := make([]byte, 7)
 	buf[0] = 29             // IOType for PortDirWrite
-	buf[1] = f.FIOWriteMask //FIO Writemask
-	buf[2] = f.EIOWriteMask //EIO Writemask
-	buf[3] = f.CIOWriteMask //CIO Writemask
-	buf[4] = f.FIODirection //FIO Direction
-	buf[5] = f.EIODirection //EIO Direction
-	buf[6] = f.CIODirection //CIO Direction
+	buf[1] = f.FIOWriteMask // FIO Writemask
+	buf[2] = f.EIOWriteMask // EIO Writemask
+	buf[3] = f.CIOWriteMask // CIO Writemask
+	buf[4] = f.FIODirection // FIO Direction
+	buf[5] = f.EIODirection // EIO Direction
+	buf[6] = f.CIODirection // CIO Direction
 	return w.Write(buf)
 }
 
@@ -86,7 +86,7 @@ func (f *FeedbackPortDirWrite) SetCalibrationInfo(info CalibrationInfo) {
 }
 
 // ReadFrom reads the response.
-func (f *FeedbackPortDirWrite) ReadFrom(r io.Reader) (int, error) {
+func (f *FeedbackPortDirWrite) ReadFrom(_ io.Reader) (int, error) {
 	return 0, nil
 }
 
@@ -112,7 +112,7 @@ func (f *FeedbackAIN24) WriteTo(w io.Writer) (int, error) {
 
 	buf := make([]byte, 4)
 	buf[0] = 2                                          // IOType for AIN24
-	buf[1] = byte(f.PositiveChannel)                    //Positive Channel 0-143s
+	buf[1] = byte(f.PositiveChannel)                    // Positive Channel 0-143s
 	buf[2] = byte(uint(f.ResolutionIndex) & 0x0F)       // ResolutionIndex
 	buf[2] = byte((uint(f.GainIndex)&0x0F)<<4) + buf[2] // GainIndex
 	buf[3] = byte(f.SettlingFactor)                     // SettlingFactor
@@ -121,18 +121,18 @@ func (f *FeedbackAIN24) WriteTo(w io.Writer) (int, error) {
 	}
 	n, err := w.Write(buf)
 	if err != nil {
-		return int(n), err
+		return n, err
 	} else if n != 4 {
-		return int(n), errors.New("Feedback AIN24 data was not fully written")
+		return n, errors.New("feedback AIN24 data was not fully written")
 	}
-	return int(n), err
+	return n, err
 }
 
 // ReadFrom reads the response.
 func (f *FeedbackAIN24) ReadFrom(r io.Reader) (int, error) {
 	f.responseBuffer = make([]byte, 4)
 	n, err := r.Read(f.responseBuffer)
-	return int(n), err
+	return n, err
 }
 
 // ResponseSize returns the response size.
@@ -160,7 +160,7 @@ func getCalibratedAIN(cal CalibrationInfo, ResolutionIndex int, GainIndex int, H
 	}
 
 	if GainIndex > 4 {
-		return 0, errors.New("Invalid gain index")
+		return 0, errors.New("invalid gain index")
 	}
 
 	if ResolutionIndex > 8 {
@@ -203,7 +203,7 @@ func (f *FeedbackBitStateRead) ResponseSize() int {
 }
 
 // SetCalibrationInfo sets the calibration info
-func (f *FeedbackBitStateRead) SetCalibrationInfo(info CalibrationInfo) {
+func (f *FeedbackBitStateRead) SetCalibrationInfo(_ CalibrationInfo) {
 }
 
 // GetState gets the response state of the bit.
@@ -241,7 +241,7 @@ func (f *FeedbackBitDirWrite) ResponseSize() int {
 }
 
 // SetCalibrationInfo sets the CalibrationInfo
-func (f *FeedbackBitDirWrite) SetCalibrationInfo(info CalibrationInfo) {
+func (f *FeedbackBitDirWrite) SetCalibrationInfo(_ CalibrationInfo) {
 }
 
 // FeedbackBitStateWrite is the BitStateWrite feedback command
@@ -259,7 +259,7 @@ func (f *FeedbackBitStateWrite) WriteTo(w io.Writer) (n int, err error) {
 }
 
 // ReadFrom reads the response
-func (f *FeedbackBitStateWrite) ReadFrom(r io.Reader) (n int, err error) {
+func (f *FeedbackBitStateWrite) ReadFrom(_ io.Reader) (n int, err error) {
 	return 0, nil
 }
 
@@ -269,5 +269,5 @@ func (f *FeedbackBitStateWrite) ResponseSize() int {
 }
 
 // SetCalibrationInfo sets the CalibrationInfo
-func (f *FeedbackBitStateWrite) SetCalibrationInfo(info CalibrationInfo) {
+func (f *FeedbackBitStateWrite) SetCalibrationInfo(_ CalibrationInfo) {
 }
