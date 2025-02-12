@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/gousb"
-	"git
+	"github.com/napaul07/labjack"
 	"io"
 	"time"
 )

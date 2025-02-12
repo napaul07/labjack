@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/google/gousb"
-	"gith
+	"github.com/napaul07/labjack/u6"
 	"log"
 	"os"
 	"time"
