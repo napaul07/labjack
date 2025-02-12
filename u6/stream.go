@@ -4,7 +4,7 @@ import (
 	// "bufio"
 	"errors"
 	"fmt"
-	"github.com/eliquious/labjack"
+	"github.com/clevertrack1/labjack"
 	"github.com/google/gousb"
 	"io"
 	"time"
@@ -284,7 +284,7 @@ func (s *Stream) start() error {
 	if err != nil {
 		return err
 	} else if n != len(header) {
-		return errors.New("Send buffer was not written completely")
+		return errors.New("send buffer was not written completely")
 	}
 
 	// Open endpoint
@@ -299,7 +299,7 @@ func (s *Stream) start() error {
 	if err != nil {
 		return err
 	} else if n != len(recvBuffer) {
-		return fmt.Errorf("Full response was not recieved from device: %d != %d", n, len(recvBuffer))
+		return fmt.Errorf("full response was not recieved from device: %d != %d", n, len(recvBuffer))
 	}
 
 	if normalChecksum8(recvBuffer[1:]) != recvBuffer[0] {
@@ -310,7 +310,7 @@ func (s *Stream) start() error {
 
 	errCode := recvBuffer[2]
 	if errCode != 0 {
-		return fmt.Errorf("Feedback response error code (%d)", errCode)
+		return fmt.Errorf("feedback response error code (%d)", errCode)
 	}
 	return nil
 }
@@ -341,7 +341,7 @@ func (s *Stream) stop() error {
 	if err != nil {
 		return err
 	} else if n != len(header) {
-		return errors.New("Send buffer was not written completely")
+		return errors.New("send buffer was not written completely")
 	}
 
 	// Open endpoint
@@ -357,7 +357,7 @@ func (s *Stream) stop() error {
 		return err
 	} else if n != len(recvBuffer) {
 		// fmt.Printf("Recv buffer: %v\n", recvBuffer)
-		return fmt.Errorf("Full response was not recieved from device: %d != %d", n, len(recvBuffer))
+		return fmt.Errorf("full response was not recieved from device: %d != %d", n, len(recvBuffer))
 	}
 
 	checksumTotal8 := normalChecksum8(recvBuffer[1:])
@@ -370,7 +370,7 @@ func (s *Stream) stop() error {
 
 	errCode := recvBuffer[2]
 	if errCode != 0 && errCode != byte(52) {
-		return fmt.Errorf("Feedback response error code (%d)", errCode)
+		return fmt.Errorf("feedback response error code (%d)", errCode)
 	}
 	return nil
 }

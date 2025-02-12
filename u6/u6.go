@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/eliquious/labjack"
+	"github.com/clevertrack1/labjack"
 	"github.com/google/gousb"
 	// "io"
 )
@@ -16,7 +16,7 @@ func OpenUSBConnection(usbctx *gousb.Context) (*U6, error) {
 	}
 
 	// Open any device with a given VID/PID using a convenience function.
-	dev, err := usbctx.OpenDeviceWithVIDPID(labjack.LabJackVendorID, labjack.U6ProductID)
+	dev, err := usbctx.OpenDeviceWithVIDPID(labjack.VendorID, labjack.U6ProductID)
 	if err != nil {
 		return &emptyU6, ErrLibUSB{"Could not open a device", err}
 	}
@@ -139,10 +139,10 @@ func validateCommandResponse(recBuffer []uint8) error {
 	if err != nil {
 		return err
 	} else if uint8((checksumTotal/256)&0xFF) != recBuffer[5] {
-		fmt.Printf("ErrInvalidChecksum MSB: %s != %s\n", uint8((checksumTotal/256)&0xFF), recBuffer[5])
+		fmt.Printf("ErrInvalidChecksum MSB: %d != %d\n", uint8((checksumTotal/256)&0xFF), recBuffer[5])
 		return ErrInvalidChecksum
 	} else if uint8(checksumTotal&0xFF) != recBuffer[4] {
-		fmt.Printf("ErrInvalidChecksum LSB: %s != %s\n", uint8((checksumTotal)&0xFF), recBuffer[4])
+		fmt.Printf("ErrInvalidChecksum LSB: %d != %d\n", uint8((checksumTotal)&0xFF), recBuffer[4])
 		return ErrInvalidChecksum
 	}
 
@@ -221,11 +221,11 @@ func (u *U6) getCalibrationInfo() error {
 	for i := 0; i < 10; i++ {
 
 		/* reading block i from memory */
-		sendBuffer[1] = uint8(0xF8) //command byte
-		sendBuffer[2] = uint8(0x01) //number of data words
-		sendBuffer[3] = uint8(0x2D) //extended command number
+		sendBuffer[1] = uint8(0xF8) // command byte
+		sendBuffer[2] = uint8(0x01) // number of data words
+		sendBuffer[3] = uint8(0x2D) // extended command number
 		sendBuffer[6] = 0
-		sendBuffer[7] = uint8(i) //Blocknum = i
+		sendBuffer[7] = uint8(i) // Blocknum = i
 		// extendedChecksum(sendBuffer[:8])
 		setChecksum(sendBuffer[:8])
 		// fmt.Println("Sent: ", sendBuffer[:8])
@@ -256,7 +256,7 @@ func (u *U6) getCalibrationInfo() error {
 		}
 		offset = i * 4
 
-		//block data starts on byte 8 of the buffer
+		// block data starts on byte 8 of the buffer
 		cal.CalConstants[offset] = uint8ArrayToFloat64(recBuffer[8:], 0)
 		// fmt.Println(recBuffer[8:16])
 		cal.CalConstants[offset+1] = uint8ArrayToFloat64(recBuffer[8:], 8)
@@ -292,7 +292,7 @@ func (u *U6) Feedback(cmds ...FeedbackCommand) error {
 	if err != nil {
 		return err
 	} else if n != len(feedbackHeader) {
-		return errors.New("Feedback header could not be written")
+		return errors.New("feedback header could not be written")
 	}
 	// fmt.Println("After header: ", sendBuffer.Bytes())
 
@@ -305,7 +305,7 @@ func (u *U6) Feedback(cmds ...FeedbackCommand) error {
 		if err != nil {
 			return err
 		} else if n == 0 {
-			return errors.New("Command data was not written")
+			return errors.New("command data was not written")
 		}
 		length += n
 		responseSize += cmd.ResponseSize()
@@ -350,7 +350,7 @@ func (u *U6) Feedback(cmds ...FeedbackCommand) error {
 	if err != nil {
 		return err
 	} else if n != len(buf) {
-		return errors.New("Send buffer was not written completely")
+		return errors.New("send buffer was not written completely")
 	}
 
 	// Open endpoint
@@ -366,7 +366,7 @@ func (u *U6) Feedback(cmds ...FeedbackCommand) error {
 		return err
 	} else if n != len(recvBuffer) {
 		// fmt.Printf("Recv buffer: %v\n", recvBuffer)
-		return fmt.Errorf("Full response was not recieved from device: %d != %d", n, len(recvBuffer))
+		return fmt.Errorf("full response was not recieved from device: %d != %d", n, len(recvBuffer))
 	}
 
 	checksumTotal, err := extendedChecksum16(recvBuffer)
@@ -393,7 +393,7 @@ func (u *U6) Feedback(cmds ...FeedbackCommand) error {
 	errCode := recvBuffer[6]
 	errFrame := recvBuffer[7]
 	if errCode != 0 {
-		return fmt.Errorf("Feedback response error code (%d): command=%d", errCode, errFrame)
+		return fmt.Errorf("feedback response error code (%d): command=%d", errCode, errFrame)
 	}
 
 	// Populate the commands' response
@@ -409,7 +409,7 @@ func (u *U6) Feedback(cmds ...FeedbackCommand) error {
 	}
 
 	if remaining != 0 {
-		return fmt.Errorf("Feedback response was not decoded completely: remaining=%d", remaining)
+		return fmt.Errorf("feedback response was not decoded completely: remaining=%d", remaining)
 	}
 	return nil
 }
@@ -418,9 +418,9 @@ func (u *U6) Feedback(cmds ...FeedbackCommand) error {
 func (u *U6) NewStream(config *StreamConfig) (*Stream, error) {
 	stream := &Stream{u, config, make(chan struct{}, 1), func() {}}
 	if config.SamplesPerPacket < 1 || config.SamplesPerPacket > 25 {
-		return stream, errors.New("Invalid samples per packet")
+		return stream, errors.New("invalid samples per packet")
 	} else if config.ResolutionIndex < 1 || config.ResolutionIndex > 8 {
-		return stream, errors.New("Invalid resolution index")
+		return stream, errors.New("invalid resolution index")
 	}
 
 	// config.ScanFrequency *= len(config.Channels)
@@ -448,9 +448,9 @@ func (u *U6) NewStream(config *StreamConfig) (*Stream, error) {
 	header[2] = byte(len(config.Channels) + 4)
 	header[3] = 0x11
 	header[6] = byte(len(config.Channels))
-	header[7] = byte(config.ResolutionIndex)
-	header[8] = byte(config.SamplesPerPacket)
-	header[10] = byte(config.SettlingFactor)
+	header[7] = config.ResolutionIndex
+	header[8] = config.SamplesPerPacket
+	header[10] = config.SettlingFactor
 	header[11] = config.ScanConfig.GetByte()
 
 	// // scanInterval := 4000
@@ -490,7 +490,7 @@ func (u *U6) NewStream(config *StreamConfig) (*Stream, error) {
 	if err != nil {
 		return stream, err
 	} else if n != len(header) {
-		return stream, errors.New("Send buffer was not written completely")
+		return stream, errors.New("send buffer was not written completely")
 	}
 
 	// Open endpoint
@@ -506,7 +506,7 @@ func (u *U6) NewStream(config *StreamConfig) (*Stream, error) {
 		return stream, err
 	} else if n != len(recvBuffer) {
 		// fmt.Printf("Recv buffer: %v\n", recvBuffer)
-		return stream, fmt.Errorf("Full response was not recieved from device: %d != %d", n, len(recvBuffer))
+		return stream, fmt.Errorf("full response was not recieved from device: %d != %d", n, len(recvBuffer))
 	}
 
 	checksumTotal, err := extendedChecksum16(recvBuffer)
@@ -532,7 +532,7 @@ func (u *U6) NewStream(config *StreamConfig) (*Stream, error) {
 
 	errCode := recvBuffer[6]
 	if errCode != 0 {
-		return stream, fmt.Errorf("Feedback response error code (%d)", errCode)
+		return stream, fmt.Errorf("feedback response error code (%d)", errCode)
 	}
 	return stream, nil
 }
