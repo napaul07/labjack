@@ -45,7 +45,7 @@ func (d DeviceDesc) String() string {
 
 func parseConfigBytes(recBuffer []uint8) (DeviceDesc, error) {
 	if len(recBuffer) > 38 {
-		return DeviceDesc{}, errors.New("Invalid config response")
+		return DeviceDesc{}, errors.New("invalid config response")
 	}
 
 	devType := UnknownDevice
